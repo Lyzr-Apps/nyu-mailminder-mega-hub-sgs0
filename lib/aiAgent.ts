@@ -108,7 +108,16 @@ export async function callAIAgent(
       }
     }
 
-    const submitData = await submitRes.json()
+    let submitData: any
+    try {
+      submitData = await submitRes.json()
+    } catch {
+      return {
+        success: false,
+        response: { status: 'error', result: {}, message: `Server returned non-JSON response (status ${submitRes.status})` },
+        error: `Server returned non-JSON response (status ${submitRes.status})`,
+      }
+    }
 
     // If submit itself failed or no task_id returned, return as-is
     if (!submitData.task_id) {
@@ -132,15 +141,27 @@ export async function callAIAgent(
       await new Promise(r => setTimeout(r, delay))
       attempt++
 
-      const pollRes = await fetchWrapper('/api/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task_id }),
-      })
-      if (!pollRes) {
-        continue // fetchWrapper returned undefined (redirect/error) — retry next poll
+      let pollRes: Response | undefined
+      try {
+        pollRes = await fetchWrapper('/api/agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task_id }),
+        })
+      } catch {
+        continue // Network error during poll — retry
       }
-      const pollData = await pollRes.json()
+      if (!pollRes) {
+        continue // fetchWrapper returned undefined (redirect) — retry next poll
+      }
+
+      let pollData: any
+      try {
+        pollData = await pollRes.json()
+      } catch {
+        // Non-JSON response (e.g., HTML error page) — retry
+        continue
+      }
 
       if (pollData.status === 'processing') {
         continue

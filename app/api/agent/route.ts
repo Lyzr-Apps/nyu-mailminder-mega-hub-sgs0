@@ -277,18 +277,30 @@ async function pollTask(task_id: string) {
   }
 
   // Task completed — envelope extraction + parseLLMJson + normalizeResponse
-  const rawText = JSON.stringify(task.response)
+  let rawData = task.response
+  const rawText = typeof rawData === 'string' ? rawData : JSON.stringify(rawData)
   let moduleOutputs: ModuleOutputs | undefined
-  let agentResponseRaw: any = rawText
 
-  try {
-    const envelope = JSON.parse(rawText)
-    if (envelope && typeof envelope === 'object' && 'response' in envelope) {
-      moduleOutputs = envelope.module_outputs
-      agentResponseRaw = envelope.response
+  // If task.response is already an object, use it directly
+  // If it's a string, parse it
+  if (typeof rawData === 'string') {
+    try {
+      rawData = JSON.parse(rawData)
+    } catch {
+      // Will be handled by parseLLMJson below
     }
-  } catch {
-    // Not standard JSON envelope — parseLLMJson will handle it
+  }
+
+  // Check for envelope pattern: { response: ..., module_outputs: ... }
+  let agentResponseRaw: any = rawData
+  if (rawData && typeof rawData === 'object' && 'response' in rawData) {
+    moduleOutputs = rawData.module_outputs
+    agentResponseRaw = rawData.response
+  }
+
+  // Also check for module_outputs at the task level
+  if (!moduleOutputs && task.module_outputs) {
+    moduleOutputs = task.module_outputs
   }
 
   const parsed = parseLLMJson(agentResponseRaw)

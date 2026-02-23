@@ -243,38 +243,174 @@ const SAMPLE_EMAILS: Email[] = [
 
 // ===== HELPERS =====
 
-function parseManagerResponse(result: any): ProcessedData | null {
-  if (!result?.success) return null
+function deepParseJSON(value: any, depth = 0): any {
+  if (depth > 5) return value
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        return deepParseJSON(parsed, depth + 1)
+      } catch {
+        return value
+      }
+    }
+    return value
+  }
+  return value
+}
 
-  let data = result?.response?.result
+function findEmailsInObject(obj: any, depth = 0): any[] | null {
+  if (depth > 8 || !obj || typeof obj !== 'object') return null
 
-  if (typeof data === 'string') {
-    try {
-      data = JSON.parse(data)
-    } catch {
-      return null
+  if (Array.isArray(obj.emails) && obj.emails.length > 0) {
+    return obj.emails
+  }
+
+  if (Array.isArray(obj) && obj.length > 0 && (obj[0]?.subject || obj[0]?.sender)) {
+    return obj
+  }
+
+  const keys = ['result', 'response', 'data', 'output', 'content', 'message', 'text']
+  for (const key of keys) {
+    if (obj[key] != null) {
+      let val = obj[key]
+      val = deepParseJSON(val)
+      const found = findEmailsInObject(val, depth + 1)
+      if (found) return found
     }
   }
 
-  if (data?.result && typeof data.result === 'string') {
-    try {
-      data = JSON.parse(data.result)
-    } catch {}
+  return null
+}
+
+function extractCountsFromObject(obj: any, depth = 0): { total?: number; critical?: number; high?: number; timestamp?: string } {
+  if (depth > 8 || !obj || typeof obj !== 'object') return {}
+
+  const counts: any = {}
+  if (typeof obj.total_emails === 'number') counts.total = obj.total_emails
+  if (typeof obj.critical_count === 'number') counts.critical = obj.critical_count
+  if (typeof obj.high_count === 'number') counts.high = obj.high_count
+  if (typeof obj.processing_timestamp === 'string') counts.timestamp = obj.processing_timestamp
+
+  if (Object.keys(counts).length > 0) return counts
+
+  const keys = ['result', 'response', 'data', 'output']
+  for (const key of keys) {
+    if (obj[key] != null) {
+      let val = obj[key]
+      val = deepParseJSON(val)
+      if (val && typeof val === 'object') {
+        const found = extractCountsFromObject(val, depth + 1)
+        if (Object.keys(found).length > 0) return found
+      }
+    }
   }
 
-  if (data?.result && typeof data.result === 'object') {
-    data = data.result
+  return {}
+}
+
+function normalizeEmail(raw: any): Email {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      email_id: `email-${Math.random().toString(36).slice(2, 10)}`,
+      sender: 'Unknown',
+      subject: 'No Subject',
+      date: new Date().toISOString(),
+      summary: '',
+      technical_context: '',
+      tone: '',
+      priority_level: 'Medium',
+      priority_rationale: '',
+      urgency_signals: [],
+      action_items: [],
+      technical_decisions: [],
+      deadlines: [],
+      stakeholder_requests: [],
+      system_references: [],
+      reply_draft: '',
+      reply_tone: '',
+      key_points_addressed: [],
+    }
   }
-
-  const emails = Array.isArray(data?.emails) ? data.emails : []
-
   return {
-    emails,
-    total_emails: data?.total_emails || emails.length,
-    critical_count: data?.critical_count || 0,
-    high_count: data?.high_count || 0,
-    processing_timestamp: data?.processing_timestamp || new Date().toISOString(),
+    email_id: raw.email_id || raw.id || raw.messageId || raw.message_id || `email-${Math.random().toString(36).slice(2, 10)}`,
+    sender: raw.sender || raw.from || raw.senderName || raw.sender_name || 'Unknown',
+    subject: raw.subject || raw.title || 'No Subject',
+    date: raw.date || raw.timestamp || raw.received_at || raw.receivedAt || new Date().toISOString(),
+    summary: raw.summary || raw.description || raw.snippet || '',
+    technical_context: raw.technical_context || raw.technicalContext || '',
+    tone: raw.tone || '',
+    priority_level: raw.priority_level || raw.priorityLevel || raw.priority || 'Medium',
+    priority_rationale: raw.priority_rationale || raw.priorityRationale || '',
+    urgency_signals: Array.isArray(raw.urgency_signals) ? raw.urgency_signals : Array.isArray(raw.urgencySignals) ? raw.urgencySignals : [],
+    action_items: Array.isArray(raw.action_items) ? raw.action_items.map((a: any) => ({
+      task: a?.task || a?.description || a?.text || String(a || ''),
+      owner: a?.owner || a?.assignee || 'Unassigned',
+      type: a?.type || a?.category || 'task',
+    })) : Array.isArray(raw.actionItems) ? raw.actionItems.map((a: any) => ({
+      task: a?.task || a?.description || String(a || ''),
+      owner: a?.owner || 'Unassigned',
+      type: a?.type || 'task',
+    })) : [],
+    technical_decisions: Array.isArray(raw.technical_decisions) ? raw.technical_decisions : Array.isArray(raw.technicalDecisions) ? raw.technicalDecisions : [],
+    deadlines: Array.isArray(raw.deadlines) ? raw.deadlines.map((d: any) => ({
+      item: d?.item || d?.description || d?.task || String(d || ''),
+      date: d?.date || d?.due || d?.deadline || '',
+    })) : [],
+    stakeholder_requests: Array.isArray(raw.stakeholder_requests) ? raw.stakeholder_requests : Array.isArray(raw.stakeholderRequests) ? raw.stakeholderRequests : [],
+    system_references: Array.isArray(raw.system_references) ? raw.system_references : Array.isArray(raw.systemReferences) ? raw.systemReferences : [],
+    reply_draft: raw.reply_draft || raw.replyDraft || raw.reply || '',
+    reply_tone: raw.reply_tone || raw.replyTone || '',
+    key_points_addressed: Array.isArray(raw.key_points_addressed) ? raw.key_points_addressed : Array.isArray(raw.keyPointsAddressed) ? raw.keyPointsAddressed : [],
   }
+}
+
+function parseManagerResponse(result: any): ProcessedData | null {
+  console.log('[EmailHub] Raw callAIAgent result:', JSON.stringify(result).slice(0, 500))
+
+  if (!result) return null
+
+  if (result.success === false) {
+    console.log('[EmailHub] Agent returned error:', result.error || result.response?.message)
+    return null
+  }
+
+  // Build list of candidate objects to search for emails
+  const candidates: any[] = []
+
+  if (result.response?.result != null) {
+    candidates.push(deepParseJSON(result.response.result))
+  }
+  if (result.response != null) {
+    candidates.push(deepParseJSON(result.response))
+  }
+  if (result.raw_response) {
+    candidates.push(deepParseJSON(result.raw_response))
+  }
+  candidates.push(result)
+
+  console.log('[EmailHub] Searching', candidates.length, 'candidates for emails array')
+
+  for (const candidate of candidates) {
+    const emails = findEmailsInObject(candidate)
+    if (emails && emails.length > 0) {
+      console.log('[EmailHub] Found', emails.length, 'emails in candidate')
+      const normalizedEmails = emails.map(normalizeEmail)
+      const counts = extractCountsFromObject(candidate)
+
+      return {
+        emails: normalizedEmails,
+        total_emails: counts.total || normalizedEmails.length,
+        critical_count: counts.critical ?? normalizedEmails.filter(e => e.priority_level === 'Critical').length,
+        high_count: counts.high ?? normalizedEmails.filter(e => e.priority_level === 'High').length,
+        processing_timestamp: counts.timestamp || new Date().toISOString(),
+      }
+    }
+  }
+
+  console.log('[EmailHub] No emails found in any candidate. Full result:', JSON.stringify(result).slice(0, 1000))
+  return null
 }
 
 function getPriorityColor(level: string): string {
@@ -668,9 +804,11 @@ export default function Page() {
 
     try {
       const query = settings.defaultQuery || 'Fetch and process my recent emails'
-      const message = `${query}. Summarize each email, extract key points and action items, and classify priority. Max emails: ${settings.maxEmails}.${settings.vipSenders ? ` VIP senders to prioritize: ${settings.vipSenders}.` : ''}${settings.priorityKeywords ? ` Priority keywords: ${settings.priorityKeywords}.` : ''}`
+      const message = `${query}. Summarize each email, extract key points and action items, and classify priority. Max emails: ${settings.maxEmails}. Return the results as a JSON object with an "emails" array where each email has: email_id, sender, subject, date, summary, technical_context, tone, priority_level (Critical/High/Medium/Low), priority_rationale, urgency_signals, action_items (array of {task, owner, type}), technical_decisions, deadlines (array of {item, date}), stakeholder_requests, system_references, reply_draft, reply_tone, key_points_addressed. Also include total_emails, critical_count, high_count, and processing_timestamp at the top level.${settings.vipSenders ? ` VIP senders to prioritize: ${settings.vipSenders}.` : ''}${settings.priorityKeywords ? ` Priority keywords: ${settings.priorityKeywords}.` : ''}`
 
+      console.log('[EmailHub] Sending process request to agent:', MANAGER_AGENT_ID)
       const result = await callAIAgent(message, MANAGER_AGENT_ID)
+      console.log('[EmailHub] Got response, success:', result?.success)
 
       const parsed = parseManagerResponse(result)
       if (parsed && parsed.emails.length > 0) {
@@ -683,12 +821,17 @@ export default function Page() {
         setHighCount(parsed.high_count)
         setLastProcessed(parsed.processing_timestamp)
       } else {
-        setProcessError(
-          result?.error || result?.response?.message || 'No emails were returned. The agent may not have found any recent emails.'
-        )
+        // Extract the most useful error message
+        const errorMsg = result?.error
+          || result?.response?.message
+          || (result?.response?.result?.text)
+          || (typeof result?.response?.result === 'string' ? result.response.result : null)
+          || 'No emails were returned. The agent may not have found any recent emails, or the response format was unexpected. Check the console for details.'
+        setProcessError(errorMsg)
       }
     } catch (err) {
-      setProcessError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      console.error('[EmailHub] Process emails error:', err)
+      setProcessError(err instanceof Error ? err.message : 'An unexpected error occurred while processing emails.')
     } finally {
       setIsProcessing(false)
       setActiveAgentId(null)
@@ -718,33 +861,43 @@ Technical Context: ${email?.technical_context ?? ''}
 Priority: ${email?.priority_level ?? 'Medium'}`
 
         const result = await callAIAgent(message, MANAGER_AGENT_ID)
+        console.log('[EmailHub] Reply result:', JSON.stringify(result).slice(0, 500))
 
         if (result?.success) {
-          let data = result?.response?.result
-          if (typeof data === 'string') {
-            try {
-              data = JSON.parse(data)
-            } catch {}
+          // Deep search for reply_draft in the nested response
+          const findReplyDraft = (obj: any, depth = 0): string => {
+            if (depth > 6 || !obj) return ''
+            if (typeof obj === 'string') {
+              const parsed = deepParseJSON(obj)
+              if (parsed && typeof parsed === 'object') return findReplyDraft(parsed, depth + 1)
+              return obj
+            }
+            if (typeof obj !== 'object') return ''
+            if (obj.reply_draft && typeof obj.reply_draft === 'string') return obj.reply_draft
+            if (obj.replyDraft && typeof obj.replyDraft === 'string') return obj.replyDraft
+            if (obj.reply && typeof obj.reply === 'string') return obj.reply
+            if (obj.draft && typeof obj.draft === 'string') return obj.draft
+            if (Array.isArray(obj.emails) && obj.emails[0]?.reply_draft) return obj.emails[0].reply_draft
+            const keys = ['result', 'response', 'data', 'output']
+            for (const key of keys) {
+              if (obj[key] != null) {
+                const found = findReplyDraft(deepParseJSON(obj[key]), depth + 1)
+                if (found) return found
+              }
+            }
+            return ''
           }
-          if (data?.result && typeof data.result === 'string') {
-            try {
-              data = JSON.parse(data.result)
-            } catch {}
-          }
-          if (data?.result && typeof data.result === 'object') {
-            data = data.result
-          }
-          const draft =
-            data?.reply_draft ||
-            data?.emails?.[0]?.reply_draft ||
-            (typeof data === 'string' ? data : '') ||
-            result?.response?.message ||
-            ''
+
+          const draft = findReplyDraft(result.response) || findReplyDraft(result) || result?.response?.message || ''
           setReplyDraft(draft)
+          if (!draft) {
+            setReplyStatus('Reply generated but no draft text was returned. Please try again.')
+          }
         } else {
-          setReplyStatus('Failed to generate reply. Please try again.')
+          setReplyStatus(result?.error || 'Failed to generate reply. Please try again.')
         }
-      } catch {
+      } catch (err) {
+        console.error('[EmailHub] Reply generation error:', err)
         setReplyStatus('Failed to generate reply. Please try again.')
       } finally {
         setIsGeneratingReply(false)

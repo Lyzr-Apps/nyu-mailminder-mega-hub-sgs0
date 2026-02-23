@@ -1,11 +1,18 @@
-const fetchWrapper = async (...args) => {
+const fetchWrapper = async (...args: Parameters<typeof fetch>): Promise<Response | undefined> => {
   try {
     const response = await fetch(...args);
 
     // if backend sent a redirect
     if (response.redirected) {
-      window.location.href = response.url; // update ui to go to the redirected UI (often /login)
+      window.location.href = response.url;
       return;
+    }
+
+    // For API routes (JSON endpoints), always return the response
+    // so callers can handle errors themselves (including 4xx and 5xx)
+    const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || '';
+    if (url.includes('/api/')) {
+      return response;
     }
 
     if (response.status == 404) {
@@ -13,40 +20,23 @@ const fetchWrapper = async (...args) => {
 
       if (contentType.includes("text/html")) {
         const html = await response.text();
-
-        // Replace entire current page with returned HTML
         document.open();
         document.write(html);
         document.close();
-
         return;
       } else {
-        alert("Backend returned Endpoint Not Found.");
+        console.error("Backend returned Endpoint Not Found.");
+        return response;
       }
-    } // if backend is erroring out
-    else if (response.status >= 500) {
-      // ask the user to refresh(do it if they select auto)
-      const shouldRefresh = confirm(
-        "Backend is not responding. Click OK to refresh.",
-      );
-
-      if (shouldRefresh) {
-        window.location.reload();
-      }
-
-      return;
+    } else if (response.status >= 500) {
+      console.error("Backend error:", response.status, response.statusText);
+      return response;
     }
 
     return response;
   } catch (error) {
-    // network failures
-    const shouldRefresh = confirm(
-      "Cannot connect to backend. Click OK to refresh.",
-    );
-
-    if (shouldRefresh) {
-      window.location.reload();
-    }
+    console.error("Network error in fetchWrapper:", error);
+    throw error;
   }
 };
 
