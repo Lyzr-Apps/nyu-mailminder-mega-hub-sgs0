@@ -1,0 +1,51 @@
+{
+  "agent_name": "Key Points Extractor Agent",
+  "agent_id": "699bc5e974f59c4579ca7c05",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "object",
+    "properties": {
+      "action_items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "task": { "type": "string" },
+            "owner": { "type": "string" },
+            "type": { "type": "string" }
+          },
+          "required": ["task", "owner", "type"],
+          "additionalProperties": false
+        }
+      },
+      "technical_decisions": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "deadlines": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "item": { "type": "string" },
+            "date": { "type": "string" }
+          },
+          "required": ["item", "date"],
+          "additionalProperties": false
+        }
+      },
+      "stakeholder_requests": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "system_references": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "required": ["action_items", "technical_decisions", "deadlines", "stakeholder_requests", "system_references"],
+    "additionalProperties": false
+  }
+}

@@ -9,8 +9,8 @@ import { AgentInterceptorProvider } from '@/components/AgentInterceptorProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Next.js App',
-  description: 'Built with Next.js, React, and Tailwind CSS',
+  title: 'NYU Email Intelligence Hub',
+  description: 'AI-powered email management for NYU Solutions Architects',
   icons: {
     icon: '/lyzr.png',
   },

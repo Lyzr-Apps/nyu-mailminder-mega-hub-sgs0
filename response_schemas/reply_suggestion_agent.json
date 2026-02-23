@@ -1,0 +1,27 @@
+{
+  "agent_name": "Reply Suggestion Agent",
+  "agent_id": "699bc5f8cf61d847321959ea",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "object",
+    "properties": {
+      "reply_draft": {
+        "type": "string",
+        "description": "The suggested reply text"
+      },
+      "tone": {
+        "type": "string",
+        "description": "The tone used: professional, technical, casual"
+      },
+      "key_points_addressed": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Which key points from the original email are addressed in the reply"
+      }
+    },
+    "required": ["reply_draft", "tone", "key_points_addressed"],
+    "additionalProperties": false
+  }
+}

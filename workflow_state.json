@@ -1,0 +1,24 @@
+{
+  "manager": {
+    "name": "Email Orchestrator Manager",
+    "agent_id": "699bc611cdfd71b8f1835e77"
+  },
+  "sub_agents": [
+    {
+      "name": "Email Summarization Agent",
+      "agent_id": "699bc5e9cdfd71b8f1835e75"
+    },
+    {
+      "name": "Key Points Extractor Agent",
+      "agent_id": "699bc5e974f59c4579ca7c05"
+    },
+    {
+      "name": "Priority Classifier Agent",
+      "agent_id": "699bc5e9d0caccbfc05176e9"
+    },
+    {
+      "name": "Reply Suggestion Agent",
+      "agent_id": "699bc5f8cf61d847321959ea"
+    }
+  ]
+}

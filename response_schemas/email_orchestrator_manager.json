@@ -1,0 +1,90 @@
+{
+  "agent_name": "Email Orchestrator Manager",
+  "agent_id": "699bc611cdfd71b8f1835e77",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "object",
+    "properties": {
+      "emails": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "email_id": { "type": "string" },
+            "sender": { "type": "string" },
+            "subject": { "type": "string" },
+            "date": { "type": "string" },
+            "summary": { "type": "string" },
+            "technical_context": { "type": "string" },
+            "tone": { "type": "string" },
+            "priority_level": { "type": "string" },
+            "priority_rationale": { "type": "string" },
+            "urgency_signals": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "action_items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "task": { "type": "string" },
+                  "owner": { "type": "string" },
+                  "type": { "type": "string" }
+                },
+                "required": ["task", "owner", "type"],
+                "additionalProperties": false
+              }
+            },
+            "technical_decisions": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "deadlines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "item": { "type": "string" },
+                  "date": { "type": "string" }
+                },
+                "required": ["item", "date"],
+                "additionalProperties": false
+              }
+            },
+            "stakeholder_requests": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "system_references": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "reply_draft": { "type": "string" },
+            "reply_tone": { "type": "string" },
+            "key_points_addressed": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "required": [
+            "email_id", "sender", "subject", "date", "summary",
+            "technical_context", "tone", "priority_level", "priority_rationale",
+            "urgency_signals", "action_items", "technical_decisions", "deadlines",
+            "stakeholder_requests", "system_references", "reply_draft",
+            "reply_tone", "key_points_addressed"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "total_emails": { "type": "number" },
+      "critical_count": { "type": "number" },
+      "high_count": { "type": "number" },
+      "processing_timestamp": { "type": "string" }
+    },
+    "required": ["emails", "total_emails", "critical_count", "high_count", "processing_timestamp"],
+    "additionalProperties": false
+  }
+}

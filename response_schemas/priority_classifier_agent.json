@@ -1,0 +1,27 @@
+{
+  "agent_name": "Priority Classifier Agent",
+  "agent_id": "699bc5e9d0caccbfc05176e9",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "object",
+    "properties": {
+      "priority_level": {
+        "type": "string",
+        "description": "One of: Critical, High, Medium, Low"
+      },
+      "rationale": {
+        "type": "string",
+        "description": "Brief explanation for the priority classification"
+      },
+      "urgency_signals": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Key signals that influenced the classification"
+      }
+    },
+    "required": ["priority_level", "rationale", "urgency_signals"],
+    "additionalProperties": false
+  }
+}

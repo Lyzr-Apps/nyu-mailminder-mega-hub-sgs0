@@ -1,0 +1,26 @@
+{
+  "agent_name": "Email Summarization Agent",
+  "agent_id": "699bc5e9cdfd71b8f1835e75",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "object",
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "Concise 2-4 sentence summary of the email"
+      },
+      "technical_context": {
+        "type": "string",
+        "description": "Key technical details mentioned"
+      },
+      "tone": {
+        "type": "string",
+        "description": "The tone of the email: formal, urgent, casual, informational"
+      }
+    },
+    "required": ["summary", "technical_context", "tone"],
+    "additionalProperties": false
+  }
+}

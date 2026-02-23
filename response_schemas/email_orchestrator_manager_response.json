@@ -1,0 +1,106 @@
+{
+  "agent_name": "Email Orchestrator Manager",
+  "agent_id": "699bc611cdfd71b8f1835e77",
+  "description": "Coordinates email fetching via Gmail, delegates to sub-agents for summarization, extraction, prioritization, and reply generation, then aggregates results into a unified view",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "emails": [
+      {
+        "email_id": "string",
+        "sender": "string",
+        "subject": "string",
+        "date": "string",
+        "summary": "string",
+        "technical_context": "string",
+        "tone": "string",
+        "priority_level": "string",
+        "priority_rationale": "string",
+        "urgency_signals": [
+          "string"
+        ],
+        "action_items": [
+          {
+            "task": "string",
+            "owner": "string",
+            "type": "string"
+          }
+        ],
+        "technical_decisions": [
+          "string"
+        ],
+        "deadlines": [
+          {
+            "item": "string",
+            "date": "string"
+          }
+        ],
+        "stakeholder_requests": [
+          "string"
+        ],
+        "system_references": [
+          "string"
+        ],
+        "reply_draft": "string",
+        "reply_tone": "string",
+        "key_points_addressed": [
+          "string"
+        ]
+      }
+    ],
+    "total_emails": "number",
+    "critical_count": "number",
+    "high_count": "number",
+    "processing_timestamp": "string"
+  },
+  "example_response": {
+    "emails": [
+      {
+        "email_id": "sample string",
+        "sender": "sample string",
+        "subject": "sample string",
+        "date": "sample string",
+        "summary": "sample string",
+        "technical_context": "sample string",
+        "tone": "sample string",
+        "priority_level": "sample string",
+        "priority_rationale": "sample string",
+        "urgency_signals": [
+          "sample string"
+        ],
+        "action_items": [
+          {
+            "task": "sample string",
+            "owner": "sample string",
+            "type": "sample string"
+          }
+        ],
+        "technical_decisions": [
+          "sample string"
+        ],
+        "deadlines": [
+          {
+            "item": "sample string",
+            "date": "sample string"
+          }
+        ],
+        "stakeholder_requests": [
+          "sample string"
+        ],
+        "system_references": [
+          "sample string"
+        ],
+        "reply_draft": "sample string",
+        "reply_tone": "sample string",
+        "key_points_addressed": [
+          "sample string"
+        ]
+      }
+    ],
+    "total_emails": 0,
+    "critical_count": 0,
+    "high_count": 0,
+    "processing_timestamp": "sample string"
+  }
+}
